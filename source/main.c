@@ -141,72 +141,101 @@ void displayMaze2D()
 // Function to display the view along a corridor and any side passages.
 void displayMaze3D()
 {
-	float xoff = 0;					// x offset used to slide image in for turning.
-	float yoff = 0;					// y offset used to give a step for moving forward.
-	float split = 0.166667;			// ratio for sides compared to central corridor.
-	float x1 = 0;					// x working variable set to corner.
-	float x2 = XDISPMAX * split;	// x working variable set to the corridor position.
-	float y1 = 0;					// y working variable set to corner.
-	float y2 = YDISPMAX * split;	// y working variable set to the corridor position.
+	float xoff = 0.0f;				// x offset used to slide image in for turning.
+	float split = (1.0f / 6.0f);	// ratio for sides compared to central corridor.
+	float x1 = 0.0f;				// working variables to draw straight lines.
+	float x2 = 0.0f;
+	float y1 = 0.0f;
+	float y2 = 0.0f;
 
 	// Shift the image to give the impression of turning for left and right.
-	if ((move == 'r') && (animate == 1)) { xoff =  XDISPMAX * 0.8; }
-	if ((move == 'r') && (animate == 2)) { xoff =  XDISPMAX * 0.6; }
-	if ((move == 'r') && (animate == 3)) { xoff =  XDISPMAX * 0.4; }
-	if ((move == 'r') && (animate == 4)) { xoff =  XDISPMAX * 0.2; }
-	if ((move == 'l') && (animate == 1)) { xoff = -XDISPMAX * 0.8; }
-	if ((move == 'l') && (animate == 2)) { xoff = -XDISPMAX * 0.6; }
-	if ((move == 'l') && (animate == 3)) { xoff = -XDISPMAX * 0.4; }
-	if ((move == 'l') && (animate == 4)) { xoff = -XDISPMAX * 0.2; }
-	// Shift the image up to give the impression of a step for moving forward.
-	if ((move == 'f') && (animate == 1)) { yoff = -6; }
-	if ((move == 'f') && (animate == 2)) { yoff = -12; }
-	if ((move == 'f') && (animate == 3)) { yoff = -8; }
-	if ((move == 'f') && (animate == 4)) { yoff = -4; }
+	if ((move == 'r') && (animate == 1)) { xoff =  XDISPMAX * 0.8f; }
+	if ((move == 'r') && (animate == 2)) { xoff =  XDISPMAX * 0.6f; }
+	if ((move == 'r') && (animate == 3)) { xoff =  XDISPMAX * 0.4f; }
+	if ((move == 'r') && (animate == 4)) { xoff =  XDISPMAX * 0.2f; }
+	if ((move == 'l') && (animate == 1)) { xoff = -XDISPMAX * 0.8f; }
+	if ((move == 'l') && (animate == 2)) { xoff = -XDISPMAX * 0.6f; }
+	if ((move == 'l') && (animate == 3)) { xoff = -XDISPMAX * 0.4f; }
+	if ((move == 'l') && (animate == 4)) { xoff = -XDISPMAX * 0.2f; }
 
-	// Construct the 3D display. Note that xoff and yoff are added to support movement animation.
+	// Calculate the x and y coming in from the corners based on the screen split between corridor and sides.
+	x2 = ((float)XDISPMAX * split);	// x working variable set to the corridor position.
+	y2 = ((float)YDISPMAX * split);	// y working variable set to the corridor position.
+
+	// Animation to move forard smoothly involves moving the x and y points back and bringing them back to the correct position in 5 steps.
+	// This is because the move will have moved the player forward one whole block. 5 steps between complete moves is enough to give 
+	// relatively smooth movement when viewed at 30 frames per second.
+	// The reduction for perspective is 1/3 per block and the animation is in 5 steps, hence the use of 15ths.
+	// As we have moved the x2 and y2 positions in for animation, the splt needs to be proprtionally reduced.
+	// The display constants are integers, everything must be explicitly shown as floats to avoid the calculations being reduced to integers.
+	if ((move == 'f') && (animate == 1)) 
+	{ 
+		x2 = ((float)XDISPMAX * split) + ((split * 8.0f / 15.0f) * (float)XDISPMAX);
+		y2 = ((float)YDISPMAX * split) + ((split * 8.0f / 15.0f) * (float)YDISPMAX);
+		split = split * (11.0f / 15.0f);
+	}
+	if ((move == 'f') && (animate == 2))
+	{
+		x2 = ((float)XDISPMAX * split) + ((split * 6.0f / 15.0f) * (float)XDISPMAX);
+		y2 = ((float)YDISPMAX * split) + ((split * 6.0f / 15.0f) * (float)YDISPMAX);
+		split = split * (12.0f / 15.0f);
+	}
+	if ((move == 'f') && (animate == 3))
+	{
+		x2 = ((float)XDISPMAX * split) + ((split * 4.0f / 15.0f) * (float)XDISPMAX);
+		y2 = ((float)YDISPMAX * split) + ((split * 4.0f / 15.0f) * (float)YDISPMAX);
+		split = split * (13.0f / 15.0f);
+	}
+	if ((move == 'f') && (animate == 4))
+	{
+		x2 = ((float)XDISPMAX * split) + ((split * 2.0f / 15.0f) * (float)XDISPMAX);
+		y2 = ((float)YDISPMAX * split) + ((split * 2.0f / 15.0f) * (float)YDISPMAX);
+		split = split * (14.0f / 15.0f);
+	}
+
+	// Construct the 3D display. Note that xoff is added to support rotation animation.
 	for (int f = 0; f <= 8; f++)
 	{ 
 		// Display the exit in the centre of the screen if facing the exit.
 		if (get3DView(f, 0) == 'E')
 		{
-			drawText("EXIT\0", GREEN, 6, XDISPCTR - 96 + XOFFSET + xoff, YDISPCTR - 24 + YOFFSET + yoff, SCREEN_TV);
+			drawText("EXIT\0", GREEN, 6, XDISPCTR - 96 + XOFFSET + xoff, YDISPCTR - 24 + YOFFSET, SCREEN_TV);
 			break;	// Stop at this point no need to show details behind the exit.
 		}
 
 		// Do centre of the corridor if blocked.
 		if (get3DView(f, 0) == '#')
 		{
-			drawLineLtd(x1 + xoff, y1 + yoff, XDISPMAX - x1 + xoff, y1 + yoff, GREEN);							// horizontal top
-			drawLineLtd(x1 + xoff, YDISPMAX - y1 + yoff, XDISPMAX - x1 + xoff, YDISPMAX - y1 + yoff, GREEN);	// horizontal bottom
+			drawLineLtd(x1 + xoff, y1, XDISPMAX - x1 + xoff, y1, GREEN);						// horizontal top
+			drawLineLtd(x1 + xoff, YDISPMAX - y1, XDISPMAX - x1 + xoff, YDISPMAX - y1, GREEN);	// horizontal bottom
 			break;	// If the middle is a block no point in working further though the display.
 		}
 
 		// If the left side is blocked show the corridor continuing.
 		if (get3DView(f, -1) == '#')
 		{
-			drawLineLtd(x1 + xoff, y1 + yoff, x2 + xoff, y2 + yoff, GREEN);										// diagonal left top
-			drawLineLtd(x1 + xoff, YDISPMAX - y1 + yoff, x2 + xoff, YDISPMAX - y2 + yoff, GREEN);				// diagonal left bottom
+			drawLineLtd(x1 + xoff, y1, x2 + xoff, y2, GREEN);									// diagonal left top
+			drawLineLtd(x1 + xoff, YDISPMAX - y1, x2 + xoff, YDISPMAX - y2, GREEN);				// diagonal left bottom
 		}
 		else // Otherwise show a turning on the left.
 		{
-			drawLineLtd(x1 + xoff, y2 + yoff, x2 + xoff, y2 + yoff, GREEN);										// horizontal left top
-			drawLineLtd(x1 + xoff, YDISPMAX - y2 + yoff, x2 + xoff, YDISPMAX - y2 + yoff, GREEN);				// horizontal left bottom
+			drawLineLtd(x1 + xoff, y2, x2 + xoff, y2, GREEN);									// horizontal left top
+			drawLineLtd(x1 + xoff, YDISPMAX - y2, x2 + xoff, YDISPMAX - y2, GREEN);				// horizontal left bottom
 		}
-		drawLineLtd(x2 + xoff, y2 + yoff, x2 + xoff, YDISPMAX - y2 + yoff, GREEN);								// vertical left (always needed)
+		drawLineLtd(x2 + xoff, y2, x2 + xoff, YDISPMAX - y2, GREEN);							// vertical left (always needed)
 
 		// If the right side is blocked show the corridor continuing.
 		if (get3DView(f, 1) == '#')
 		{
-			drawLineLtd(XDISPMAX - x1 + xoff, y1 + yoff, XDISPMAX - x2 + xoff, y2 + yoff, GREEN);						// diagonal right top
-			drawLineLtd(XDISPMAX - x1 + xoff, YDISPMAX - y1 + yoff, XDISPMAX - x2 + xoff, YDISPMAX - y2 + yoff, GREEN);	// diagonal right bottom
+			drawLineLtd(XDISPMAX - x1 + xoff, y1, XDISPMAX - x2 + xoff, y2, GREEN);							// diagonal right top
+			drawLineLtd(XDISPMAX - x1 + xoff, YDISPMAX - y1, XDISPMAX - x2 + xoff, YDISPMAX - y2, GREEN);	// diagonal right bottom
 		}
 		else // Otherwise show a turning on the right.
 		{
-			drawLineLtd(XDISPMAX - x1 + xoff, y2 + yoff, XDISPMAX - x2 + xoff, y2 + yoff, GREEN);						// horizontal right top
-			drawLineLtd(XDISPMAX - x1 + xoff, YDISPMAX - y2 + yoff, XDISPMAX - x2 + xoff, YDISPMAX - y2 + yoff, GREEN);	// horizontal right bottom
+			drawLineLtd(XDISPMAX - x1 + xoff, y2, XDISPMAX - x2 + xoff, y2, GREEN);							// horizontal right top
+			drawLineLtd(XDISPMAX - x1 + xoff, YDISPMAX - y2, XDISPMAX - x2 + xoff, YDISPMAX - y2, GREEN);	// horizontal right bottom
 		}
-		drawLineLtd(XDISPMAX - x2 + xoff, y2 + yoff, XDISPMAX - x2 + xoff, YDISPMAX - y2 + yoff, GREEN);				// vertical right (always needed)
+		drawLineLtd(XDISPMAX - x2 + xoff, y2, XDISPMAX - x2 + xoff, YDISPMAX - y2, GREEN);					// vertical right (always needed)
 
 		split = split * 0.666667;		// reduce the split value by 1/3 each time to move along corridor into the distance.
 		x1 = x2;						// make x1 start from the end of the previous line.
